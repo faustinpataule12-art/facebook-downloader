@@ -1,0 +1,41 @@
+name: Build APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Configurer Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Générer le wrapper Gradle
+        run: gradle wrapper --gradle-version 8.7
+
+      - name: Rendre gradlew exécutable
+        run: chmod +x ./gradlew
+
+      - name: Compiler l'APK (debug)
+        run: ./gradlew assembleDebug
+
+      - name: Créer une release avec l'APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: "Facebook Downloader - build ${{ github.run_number }}"
+          files: app/build/outputs/apk/debug/app-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
